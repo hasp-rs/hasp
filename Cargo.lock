@@ -307,6 +307,7 @@ dependencies = [
  "env_logger",
  "fs2",
  "hasp-metadata",
+ "hasp-workspace-hack",
  "home",
  "include_dir",
  "jod-thread",
@@ -329,11 +330,31 @@ dependencies = [
  "camino",
  "chrono",
  "either",
+ "hasp-workspace-hack",
  "proptest",
  "rusqlite",
  "semver",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "hasp-workspace-hack"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "getrandom",
+ "libsqlite3-sys",
+ "num-traits",
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "regex-syntax",
+ "rusqlite",
+ "semver",
+ "serde",
+ "syn",
+ "winapi",
 ]
 
 [[package]]

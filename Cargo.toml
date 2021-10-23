@@ -3,4 +3,5 @@ resolver = "2"
 members = [
     "hasp",
     "hasp-metadata",
+    "hasp-workspace-hack",
 ]

@@ -12,6 +12,7 @@ rusqlite = { version = "0.26.1", features = ["serde_json"], optional = true }
 semver = "1.0.4"
 serde = { version = "1.0.130", features = ["derive"] }
 serde_json = "1.0.68"
+hasp-workspace-hack = { path = "../hasp-workspace-hack"}
 
 [dev-dependencies]
 proptest = "1.0.0"
