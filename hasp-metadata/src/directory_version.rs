@@ -182,7 +182,8 @@ mod tests {
         type Strategy = BoxedStrategy<Self>;
 
         fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-            const VERSION_REGEX: &str = "([a-zA-Z0-9]+\\.)*[a-zA-Z0-9]+";
+            // Can't have leading zeros in the prerelease identifier.
+            const VERSION_REGEX: &str = "([a-zA-Z1-9]+\\.)*[a-zA-Z1-9]+";
 
             let major_minor_patch = (any::<u64>(), any::<u64>(), any::<u64>());
             let pre_strategy = prop_oneof![3 => VERSION_REGEX, 1 => Just("".to_owned())];
