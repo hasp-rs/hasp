@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["spawn",""]],"struct":[["Builder",""],["JoinHandle","Like `thread::JoinHandle`, but joins the thread on drop and propagates panics by default."]]});
