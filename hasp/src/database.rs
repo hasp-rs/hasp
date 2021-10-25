@@ -33,6 +33,7 @@ impl ConnectionCreator {
         [DatabaseName::Main, DatabaseName::Attached("packages")];
 
     // SQLite application id: hex representation of the string "hasp".
+    const APPLICATION_ID_PRAGMA: &'static str = "application_id";
     const APPLICATION_ID: i32 = 0x68617370;
 
     // Busy timeout.
@@ -181,14 +182,30 @@ impl ConnectionCreator {
     }
 
     fn set_application_id(&self, conn: &Connection, db: DatabaseName) -> Result<()> {
-        conn.pragma_update(Some(db), "application_id", Self::APPLICATION_ID)
-            .wrap_err_with(|| {
-                format!(
-                    "setting application ID failed for {} (database {:?})",
-                    self.inner.description(),
-                    db
-                )
-            })
+        let mut application_id = 0;
+
+        conn.pragma_query(Some(db), Self::APPLICATION_ID_PRAGMA, |row| {
+            application_id = row.get(0)?;
+            Ok(())
+        })
+        .wrap_err_with(|| {
+            format!(
+                "query application ID failed for {} (database {:?})",
+                self.inner.description(),
+                db
+            )
+        })?;
+        if application_id != Self::APPLICATION_ID {
+            conn.pragma_update(Some(db), "application_id", Self::APPLICATION_ID)
+                .wrap_err_with(|| {
+                    format!(
+                        "setting application ID failed for {} (database {:?})",
+                        self.inner.description(),
+                        db
+                    )
+                })?;
+        }
+        Ok(())
     }
 }
 
