@@ -2,23 +2,17 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use crate::{
-    crate_info::CrateInfo,
-    crate_resolve::{exact_version_req, split_version},
-    install_root::{InstallAttempted, InstallRet},
-    output::OutputOpts,
-    state::HaspState,
+    fetch_install::InstallStatus, helpers::split_version, output::OutputOpts, state::HaspState,
 };
-use color_eyre::{eyre::eyre, Result};
-use hasp_metadata::DirectoryVersion;
+use color_eyre::{owo_colors::OwoColorize, Result};
+use hasp_metadata::CargoDirectory;
 use structopt::StructOpt;
 
 mod cargo_cli;
-mod crate_info;
-mod crate_resolve;
 mod database;
 mod events;
-mod install_root;
-mod installer;
+mod fetch_install;
+mod helpers;
 mod models;
 mod output;
 mod state;
@@ -33,9 +27,9 @@ pub struct App {
 }
 
 impl App {
-    pub fn exec(self) -> Result<i32> {
+    pub async fn exec(self) -> Result<i32> {
         self.global_opts.output.init_logger();
-        self.command.exec(&self.global_opts)
+        self.command.exec(&self.global_opts).await
     }
 }
 
@@ -64,31 +58,48 @@ enum Command {
 }
 
 impl Command {
-    fn exec(self, global_opts: &GlobalOpts) -> Result<i32> {
+    async fn exec(self, global_opts: &GlobalOpts) -> Result<i32> {
         match self {
             Command::Install { crates } => {
                 let state = HaspState::load_or_init()?;
+
+                let mut already_installed = vec![];
+
                 for spec in crates {
-                    // TODO: Currently this takes exact versions only.
                     let (name, version_req) = split_version(&spec)?;
-                    let version = exact_version_req(&version_req).ok_or_else(|| {
-                        eyre!("non-exact version specified for {}: {}", name, version_req)
-                    })?;
-                    let crate_info = CrateInfo {
-                        // TODO: non-cargo namespaces
-                        namespace: "cargo".into(),
-                        name,
-                        version: DirectoryVersion::new_semantic(version),
-                        default_features: true,
-                    };
-                    let install_root = state.install_root(crate_info)?;
-                    let install_ret = install_root.install(global_opts.output)?;
-                    match install_ret {
-                        InstallRet::Attempted(InstallAttempted::Success) => {}
-                        InstallRet::Attempted(InstallAttempted::Failure) => return Ok(2),
-                        InstallRet::AlreadyInstalled => return Ok(1),
+                    let status = state
+                        .cargo_install(
+                            name,
+                            version_req.into(),
+                            CargoDirectory {
+                                default_features: true,
+                            },
+                            global_opts.output,
+                        )
+                        .await?;
+                    match status {
+                        InstallStatus::Success => {}
+                        InstallStatus::Failure(err) => {
+                            log::error!("{} failed to install: {:#}", spec.bold(), err);
+                            return Ok(2);
+                        }
+                        InstallStatus::AlreadyInstalled => {
+                            already_installed.push(spec);
+                        }
                     }
                 }
+
+                if !already_installed.is_empty() {
+                    let mut s = String::with_capacity(512);
+                    for spec in &already_installed {
+                        s.push_str("  * ");
+                        s.push_str(&format!("{}", spec.bold()));
+                        s.push('\n');
+                    }
+                    log::info!("these crates were already installed:\n{}", s);
+                    return Ok(1);
+                }
+
                 Ok(0)
             }
         }

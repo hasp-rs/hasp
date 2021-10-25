@@ -34,5 +34,5 @@ pub struct CargoDirectory {
     /// Whether default features were requested.
     pub default_features: bool,
 }
-
-json_impls!(CargoDirectory);
+//
+// json_impls!(CargoDirectory);

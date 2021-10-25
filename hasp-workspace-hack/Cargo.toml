@@ -14,29 +14,36 @@ publish = false
 ### BEGIN HAKARI SECTION
 [dependencies]
 chrono = { version = "0.4", features = ["clock", "libc", "oldtime", "serde", "std", "time", "winapi"] }
+hex = { version = "0.4", features = ["alloc", "serde", "std"] }
+itoa = { version = "0.4", features = ["std"] }
 libsqlite3-sys = { version = "0.23", features = ["bundled", "bundled_bindings", "cc", "min_sqlite_version_3_6_8", "pkg-config", "vcpkg"] }
 num-traits = { version = "0.2", default-features = false, features = ["std"] }
 regex-syntax = { version = "0.6", features = ["unicode", "unicode-age", "unicode-bool", "unicode-case", "unicode-gencat", "unicode-perl", "unicode-script", "unicode-segment"] }
 rusqlite = { version = "0.26", default-features = false, features = ["bundled", "chrono", "modern_sqlite", "serde_json"] }
 semver = { version = "1", features = ["serde", "std"] }
-serde = { version = "1", features = ["derive", "serde_derive", "std"] }
+serde = { version = "1", features = ["derive", "rc", "serde_derive", "std"] }
+serde_json = { version = "1", features = ["std", "unbounded_depth"] }
 
 [build-dependencies]
+cc = { version = "1", default-features = false, features = ["jobserver", "parallel"] }
 proc-macro2 = { version = "1", features = ["proc-macro"] }
 quote = { version = "1", features = ["proc-macro"] }
-syn = { version = "1", features = ["clone-impls", "derive", "full", "parsing", "printing", "proc-macro", "quote"] }
+syn = { version = "1", features = ["clone-impls", "derive", "full", "parsing", "printing", "proc-macro", "quote", "visit-mut"] }
 
 [target.x86_64-unknown-linux-gnu.dependencies]
 getrandom = { version = "0.2", default-features = false, features = ["std"] }
+hashbrown = { version = "0.11", features = ["ahash", "inline-more", "raw"] }
 once_cell = { version = "1", features = ["alloc", "race", "std"] }
 
 [target.x86_64-apple-darwin.dependencies]
 getrandom = { version = "0.2", default-features = false, features = ["std"] }
+hashbrown = { version = "0.11", features = ["ahash", "inline-more", "raw"] }
 once_cell = { version = "1", features = ["alloc", "race", "std"] }
 
 [target.x86_64-pc-windows-msvc.dependencies]
 getrandom = { version = "0.2", default-features = false, features = ["std"] }
+hashbrown = { version = "0.11", features = ["ahash", "inline-more", "raw"] }
 once_cell = { version = "1", features = ["alloc", "race", "std"] }
-winapi = { version = "0.3", default-features = false, features = ["consoleapi", "errhandlingapi", "fileapi", "handleapi", "minwinbase", "minwindef", "namedpipeapi", "ntdef", "processenv", "processthreadsapi", "profileapi", "shlobj", "std", "synchapi", "sysinfoapi", "timezoneapi", "winbase", "wincon", "winerror", "winnt"] }
+winapi = { version = "0.3", default-features = false, features = ["cfg", "consoleapi", "errhandlingapi", "evntrace", "fileapi", "handleapi", "impl-debug", "impl-default", "in6addr", "inaddr", "ioapiset", "lmcons", "minschannel", "minwinbase", "minwindef", "mstcpip", "mswsock", "namedpipeapi", "ntdef", "ntsecapi", "processenv", "processthreadsapi", "profileapi", "schannel", "securitybaseapi", "shlobj", "sspi", "std", "synchapi", "sysinfoapi", "timezoneapi", "winbase", "wincon", "wincrypt", "windef", "winerror", "winioctl", "winnt", "winreg", "winsock2", "ws2def", "ws2ipdef", "ws2tcpip"] }
 
 ### END HAKARI SECTION

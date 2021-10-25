@@ -49,9 +49,7 @@ impl<'a> CargoCli<'a> {
         if self.output_opts.quiet {
             initial_args.push("--quiet");
         }
-        if self.output_opts.verbose {
-            initial_args.push("--verbose");
-        }
+        // Don't push verbose down because it produces a ton of output.
         initial_args.push(self.output_opts.color.to_arg());
 
         initial_args.push(self.command);
