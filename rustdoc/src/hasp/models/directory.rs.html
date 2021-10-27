@@ -145,62 +145,161 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
 <span class="kw">use</span> <span class="ident">color_eyre</span>::{<span class="ident">eyre::WrapErr</span>, <span class="prelude-ty">Result</span>};
-<span class="kw">use</span> <span class="ident">hasp_metadata</span>::{<span class="ident">CargoDirectory</span>, <span class="ident">DirectoryHash</span>, <span class="ident">DirectoryVersion</span>, <span class="ident">PackageDirectory</span>};
-<span class="kw">use</span> <span class="ident">rusqlite</span>::{
-    <span class="ident">params</span>,
-    <span class="ident">types</span>::{<span class="ident">FromSql</span>, <span class="ident">FromSqlError</span>, <span class="ident">FromSqlResult</span>, <span class="ident">ToSqlOutput</span>, <span class="ident">ValueRef</span>},
-    <span class="ident">Connection</span>, <span class="ident">Row</span>, <span class="ident">ToSql</span>, <span class="ident">Transaction</span>,
-};
+<span class="kw">use</span> <span class="ident">hasp_metadata</span>::{<span class="ident">DirectoryVersion</span>, <span class="ident">FileHash</span>, <span class="ident">PackageDirectory</span>};
+<span class="kw">use</span> <span class="ident">rusqlite</span>::{<span class="ident">named_params</span>, <span class="ident">params</span>, <span class="ident">Connection</span>, <span class="ident">Row</span>, <span class="ident">Transaction</span>};
+<span class="kw">use</span> <span class="ident">std::collections::BTreeMap</span>;
 
 <span class="doccomment">/// Per-directory information stored in the database.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">DirectoryRow</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">directory_id</span>: <span class="ident">i64</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">namespace</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">hash</span>: <span class="ident">DirectoryHash</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">version</span>: <span class="ident">DirectoryVersion</span>,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">metadata</span>: <span class="ident">CargoDirectory</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">package</span>: <span class="ident">PackageDirectory</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">DirectoryRow</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">all_matches_for</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>(
-        <span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>,
-        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">str</span>,
-        <span class="ident">version</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">DirectoryVersion</span>,
-        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Connection</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">all_matches_for</span>(
+        <span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stmt</span> <span class="op">=</span> <span class="ident">conn</span>
             .<span class="ident">prepare_cached</span>(
                 <span class="string">&quot;SELECT directory_id, namespace, name, hash, version, metadata \
-            FROM packages.directories WHERE name == ?1 AND version == ?2&quot;</span>,
+            FROM packages.directories WHERE namespace = ?1 AND name == ?2&quot;</span>,
             )
-            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format!</span>(
-                    <span class="string">&quot;error preparing query for {}:{} (version {})&quot;</span>,
-                    <span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">version</span>
-                )
-            })<span class="question-mark">?</span>;
+            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;error preparing query for {}:{}&quot;</span>, <span class="ident">namespace</span>, <span class="ident">name</span>))<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">rows</span> <span class="op">=</span> <span class="ident">stmt</span>
-            .<span class="ident">query_and_then</span>([<span class="ident">name</span>, <span class="ident">version</span>.<span class="ident">to_string</span>().<span class="ident">as_str</span>()], <span class="ident"><span class="self">Self</span>::from_row</span>)
-            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format!</span>(
-                    <span class="string">&quot;error querying matches for {}:{} (version {})&quot;</span>,
-                    <span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">version</span>
-                )
-            })<span class="question-mark">?</span>;
+            .<span class="ident">query_and_then</span>([<span class="ident">namespace</span>, <span class="ident">name</span>], <span class="ident"><span class="self">Self</span>::from_row</span>)
+            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;error querying matches for {}:{}&quot;</span>, <span class="ident">namespace</span>, <span class="ident">name</span>))<span class="question-mark">?</span>;
 
         <span class="ident">rows</span>.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
-            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> {
-                <span class="macro">format!</span>(
-                    <span class="string">&quot;error resolving matches for {}:{} version {}&quot;</span>,
-                    <span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">version</span>
-                )
-            })
+            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;error resolving matches for {}:{}&quot;</span>, <span class="ident">namespace</span>, <span class="ident">name</span>))
+    }
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">all_matches_for_version</span>(
+        <span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">version</span>: <span class="kw-2">&amp;</span><span class="ident">DirectoryVersion</span>,
+        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident"><span class="self">Self</span>::all_matches_for_version_impl</span>(<span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">version</span>, <span class="ident">conn</span>).<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> {
+            <span class="macro">format!</span>(
+                <span class="string">&quot;failed to get known data for {}:{} (version {})&quot;</span>,
+                <span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">version</span>
+            )
+        })
+    }
+
+    <span class="kw">fn</span> <span class="ident">all_matches_for_version_impl</span>(
+        <span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">version</span>: <span class="kw-2">&amp;</span><span class="ident">DirectoryVersion</span>,
+        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stmt</span> <span class="op">=</span> <span class="ident">conn</span>
+            .<span class="ident">prepare_cached</span>(
+                <span class="string">&quot;SELECT directory_id, namespace, name, hash, version, metadata \
+            FROM packages.directories \
+            WHERE namespace = :namespace AND name == :name AND version == :version&quot;</span>,
+            )
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to prepare statement&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">rows</span> <span class="op">=</span> <span class="ident">stmt</span>
+            .<span class="ident">query_and_then</span>(
+                <span class="macro">named_params!</span> {
+                    <span class="string">&quot;:namespace&quot;</span>: <span class="ident">namespace</span>,
+                    <span class="string">&quot;:name&quot;</span>: <span class="ident">name</span>,
+                    <span class="string">&quot;:version&quot;</span>: <span class="ident">version</span>,
+                },
+                <span class="ident"><span class="self">Self</span>::from_row</span>,
+            )
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to query matches&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="ident">rows</span>.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to collect matches&quot;</span>)
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_row</span>(<span class="ident">row</span>: <span class="kw-2">&amp;</span><span class="ident">Row</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
@@ -209,87 +308,148 @@
         <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;name&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;hash&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">version</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;version&quot;</span>)<span class="question-mark">?</span>;
-        <span class="comment">// TODO: match by namespace and use an enum</span>
         <span class="kw">let</span> <span class="ident">metadata</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;metadata&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">directory_id</span>,
-            <span class="ident">namespace</span>,
-            <span class="ident">name</span>,
-            <span class="ident">hash</span>,
-            <span class="ident">version</span>,
-            <span class="ident">metadata</span>,
+            <span class="ident">package</span>: <span class="ident">PackageDirectory</span> {
+                <span class="ident">namespace</span>,
+                <span class="ident">name</span>,
+                <span class="ident">hash</span>,
+                <span class="ident">version</span>,
+                <span class="ident">metadata</span>,
+            },
         })
-    }
-
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_package_directory</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PackageDirectory</span> {
-        <span class="ident">PackageDirectory</span> {
-            <span class="ident">namespace</span>: <span class="self">self</span>.<span class="ident">namespace</span>.<span class="ident">clone</span>(),
-            <span class="ident">name</span>: <span class="self">self</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
-            <span class="ident">version</span>: <span class="self">self</span>.<span class="ident">version</span>.<span class="ident">clone</span>(),
-            <span class="ident">hash</span>: <span class="self">self</span>.<span class="ident">hash</span>,
-            <span class="ident">metadata</span>: <span class="ident">serde_json::to_value</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">metadata</span>)
-                .<span class="ident">expect</span>(<span class="string">&quot;serialization to value succeeded&quot;</span>),
-        }
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_friendly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
         <span class="macro">format!</span>(
             <span class="string">&quot;{}:{} (version {}, hash {})&quot;</span>,
-            <span class="self">self</span>.<span class="ident">namespace</span>, <span class="self">self</span>.<span class="ident">name</span>, <span class="self">self</span>.<span class="ident">version</span>, <span class="self">self</span>.<span class="ident">hash</span>
+            <span class="self">self</span>.<span class="ident">package</span>.<span class="ident">namespace</span>, <span class="self">self</span>.<span class="ident">package</span>.<span class="ident">name</span>, <span class="self">self</span>.<span class="ident">package</span>.<span class="ident">version</span>, <span class="self">self</span>.<span class="ident">package</span>.<span class="ident">hash</span>
         )
     }
 
-    <span class="doccomment">/// Gets the most recent state for this row.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">InstallState</span><span class="op">&gt;</span> {
+    <span class="doccomment">/// Gets the most recent installed state for this row.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">get_installed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
         <span class="ident">conn</span>.<span class="ident">query_row</span>(
-            <span class="string">&quot;SELECT state FROM packages.directories WHERE directory_id = ?1&quot;</span>,
+            <span class="string">&quot;SELECT installed FROM packages.directories WHERE directory_id = ?1&quot;</span>,
             [<span class="self">self</span>.<span class="ident">directory_id</span>],
-            <span class="op">|</span><span class="ident">row</span><span class="op">|</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;state&quot;</span>),
+            <span class="op">|</span><span class="ident">row</span><span class="op">|</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;installed&quot;</span>),
         )
-        .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to get state for {}&quot;</span>, <span class="self">self</span>.<span class="ident">to_friendly</span>()))
+        .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to get installed state for {}&quot;</span>, <span class="self">self</span>.<span class="ident">to_friendly</span>()))
     }
 
-    <span class="doccomment">/// Sets a new state for this row.</span>
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>, <span class="ident">state</span>: <span class="ident">InstallState</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+    <span class="doccomment">/// Sets a new installed state for this row.</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">set_installed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">txn</span>: <span class="kw-2">&amp;</span><span class="ident">Transaction</span>, <span class="ident">installed</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
         <span class="ident">txn</span>.<span class="ident">execute</span>(
-            <span class="string">&quot;UPDATE packages.directories SET state = ?1 WHERE directory_id = ?2&quot;</span>,
-            <span class="macro">params!</span>[<span class="ident">state</span>, <span class="self">self</span>.<span class="ident">directory_id</span>],
+            <span class="string">&quot;UPDATE packages.directories SET installed = ?1 WHERE directory_id = ?2&quot;</span>,
+            <span class="macro">params!</span>[<span class="ident">installed</span>, <span class="self">self</span>.<span class="ident">directory_id</span>],
         )
-        .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to set state for {}&quot;</span>, <span class="self">self</span>.<span class="ident">to_friendly</span>()))<span class="question-mark">?</span>;
+        .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to set installed state for {}&quot;</span>, <span class="self">self</span>.<span class="ident">to_friendly</span>()))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="comment">// ---</span>
-<span class="comment">// InstallState</span>
-<span class="comment">// ---</span>
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">InstallState</span> {
-    <span class="ident">NotInstalled</span>,
-    <span class="ident">Installing</span>,
-    <span class="ident">Installed</span>,
+<span class="doccomment">/// Per-install information stored in the database.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">InstalledRow</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">directory_row</span>: <span class="ident">DirectoryRow</span>,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="ident">install_id</span>: <span class="ident">i64</span>,
+    <span class="ident">install_metadata</span>: <span class="ident">serde_json::Value</span>,
+    <span class="ident">binaries</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">InstalledFileRow</span><span class="op">&gt;</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">FromSql</span> <span class="kw">for</span> <span class="ident">InstallState</span> {
-    <span class="kw">fn</span> <span class="ident">column_result</span>(<span class="ident">value</span>: <span class="ident">ValueRef</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">FromSqlResult</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="ident">value</span>.<span class="ident">as_str</span>().<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">v</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">v</span> {
-            <span class="string">&quot;not-installed&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallState::NotInstalled</span>),
-            <span class="string">&quot;installing&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallState::Installing</span>),
-            <span class="string">&quot;installed&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallState::Installed</span>),
-            <span class="ident">_other</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">FromSqlError::InvalidType</span>),
+<span class="kw">impl</span> <span class="ident">InstalledRow</span> {
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">all_matches_for</span>(
+        <span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
+        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident"><span class="self">Self</span>::all_matches_for_impl</span>(<span class="ident">namespace</span>, <span class="ident">name</span>, <span class="ident">conn</span>)
+            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to get install data for {}:{}&quot;</span>, <span class="ident">namespace</span>, <span class="ident">name</span>))
+    }
+
+    <span class="kw">fn</span> <span class="ident">all_matches_for_impl</span>(<span class="ident">namespace</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stmt</span> <span class="op">=</span> <span class="ident">conn</span>
+            .<span class="ident">prepare_cached</span>(
+                <span class="string">&quot;SELECT \
+                    packages.directories.directory_id as directory_id, \
+                    namespace, name, hash, version, \
+                    packages.directories.metadata as metadata, \
+                    install_id, install_time, \
+                    packages.installed.metadata as install_metadata \
+                FROM packages.directories \
+                INNER JOIN packages.installed USING (directory_id) \
+                WHERE namespace == :namespace AND name == :name&quot;</span>,
+            )
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to prepare statement&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">rows</span> <span class="op">=</span> <span class="ident">stmt</span>
+            .<span class="ident">query_and_then</span>(
+                <span class="macro">named_params!</span> {
+                    <span class="string">&quot;:namespace&quot;</span>: <span class="ident">namespace</span>,
+                    <span class="string">&quot;:name&quot;</span>: <span class="ident">name</span>,
+                },
+                <span class="op">|</span><span class="ident">row</span><span class="op">|</span> <span class="ident"><span class="self">Self</span>::from_row</span>(<span class="ident">conn</span>, <span class="ident">row</span>),
+            )
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to query rows&quot;</span>)<span class="question-mark">?</span>;
+        <span class="ident">rows</span>.<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+            .<span class="ident">wrap_err</span>(<span class="string">&quot;failed to collect rows&quot;</span>)
+    }
+
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from_row</span>(<span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>, <span class="ident">row</span>: <span class="kw-2">&amp;</span><span class="ident">Row</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">directory_row</span> <span class="op">=</span> <span class="ident">DirectoryRow::from_row</span>(<span class="ident">row</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">install_id</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;install_id&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">install_metadata</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;install_metadata&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="comment">// Find all the binaries for this install id.</span>
+        <span class="kw">let</span> <span class="ident">binaries</span> <span class="op">=</span> <span class="ident">InstalledFileRow::all_matches_for_impl</span>(<span class="ident">conn</span>, <span class="ident">install_id</span>)<span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
+            <span class="ident">directory_row</span>,
+            <span class="ident">install_id</span>,
+            <span class="ident">install_metadata</span>,
+            <span class="ident">binaries</span>,
         })
     }
 }
 
-<span class="kw">impl</span> <span class="ident">ToSql</span> <span class="kw">for</span> <span class="ident">InstallState</span> {
-    <span class="kw">fn</span> <span class="ident">to_sql</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="ident">ToSqlOutput</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">InstallState::NotInstalled</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="string">&quot;not-installed&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">InstallState::Installing</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="string">&quot;installing&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">InstallState::Installed</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="string">&quot;installed&quot;</span>.<span class="ident">into</span>()),
-        }
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">InstalledFileRow</span> {
+    <span class="ident">installed_file_id</span>: <span class="ident">i64</span>,
+    <span class="ident">hash</span>: <span class="ident">FileHash</span>,
+    <span class="ident">file_metadata</span>: <span class="ident">serde_json::Value</span>,
+    <span class="ident">is_binary</span>: <span class="ident">bool</span>,
+}
+
+<span class="kw">impl</span> <span class="ident">InstalledFileRow</span> {
+    <span class="kw">fn</span> <span class="ident">all_matches_for_impl</span>(
+        <span class="ident">conn</span>: <span class="kw-2">&amp;</span><span class="ident">Connection</span>,
+        <span class="ident">install_id</span>: <span class="ident">i64</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">rusqlite::Result</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stmt</span> <span class="op">=</span> <span class="ident">conn</span>.<span class="ident">prepare_cached</span>(
+            <span class="string">&quot;SELECT installed_file_id, name, hash, metadata, is_binary FROM packages.installed_files \
+            WHERE install_id = ?1&quot;</span>,
+        )<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">rows</span> <span class="op">=</span> <span class="ident">stmt</span>.<span class="ident">query_and_then</span>([<span class="ident">install_id</span>], <span class="ident"><span class="self">Self</span>::from_row</span>)<span class="question-mark">?</span>;
+        <span class="ident">rows</span>.<span class="ident">collect</span>()
+    }
+
+    <span class="kw">fn</span> <span class="ident">from_row</span>(<span class="ident">row</span>: <span class="kw-2">&amp;</span><span class="ident">Row</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">rusqlite::Result</span><span class="op">&lt;</span>(<span class="ident">String</span>, <span class="self">Self</span>)<span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">installed_file_id</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;installed_file_id&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;name&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;hash&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">file_metadata</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;metadata&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">is_binary</span> <span class="op">=</span> <span class="ident">row</span>.<span class="ident">get</span>(<span class="string">&quot;is_binary&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="prelude-val">Ok</span>((
+            <span class="ident">name</span>,
+            <span class="self">Self</span> {
+                <span class="ident">installed_file_id</span>,
+                <span class="ident">hash</span>,
+                <span class="ident">file_metadata</span>,
+                <span class="ident">is_binary</span>,
+            },
+        ))
     }
 }
 </code></pre></div>

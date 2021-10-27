@@ -75,51 +75,55 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{
-    <span class="ident">crate_info::CrateInfo</span>,
     <span class="ident">database</span>::{<span class="ident">ConnectionCreator</span>, <span class="ident">DbContext</span>},
     <span class="ident">events::EventLogger</span>,
-    <span class="ident">install_root::InstallRoot</span>,
+    <span class="ident">home::HaspHome</span>,
+    <span class="ident">ops</span>::{<span class="ident">CargoMatcher</span>, <span class="ident">InstallStatus</span>, <span class="ident">PackageMatcher</span>},
+    <span class="ident">output::OutputOpts</span>,
 };
 <span class="kw">use</span> <span class="ident">camino::Utf8PathBuf</span>;
-
-<span class="kw">use</span> <span class="ident">color_eyre</span>::{
-    <span class="ident">eyre</span>::{<span class="ident">bail</span>, <span class="ident">WrapErr</span>},
-    <span class="prelude-ty">Result</span>,
-};
-<span class="kw">use</span> <span class="ident">home::home_dir</span>;
-
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">convert::TryInto</span>, <span class="ident">env</span>, <span class="ident">fs</span>, <span class="ident">path::PathBuf</span>};
+<span class="kw">use</span> <span class="ident">color_eyre</span>::{<span class="ident">eyre::WrapErr</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">hasp_metadata</span>::{<span class="ident">CargoDirectory</span>, <span class="ident">DirectoryVersionReq</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">HaspState</span> {
-    <span class="ident">home</span>: <span class="ident">Utf8PathBuf</span>,
+    <span class="ident">home</span>: <span class="ident">HaspHome</span>,
     <span class="ident">ctx</span>: <span class="ident">DbContext</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">HaspState</span> {
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load_or_init</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">hasp_home</span> <span class="op">=</span> <span class="ident">hasp_home</span>()<span class="question-mark">?</span>;
-        <span class="ident"><span class="self">Self</span>::load_or_init_at</span>(<span class="ident">hasp_home</span>)
+        <span class="kw">let</span> <span class="ident">hasp_home</span> <span class="op">=</span> <span class="ident">HaspHome::discover</span>()<span class="question-mark">?</span>;
+        <span class="ident"><span class="self">Self</span>::load_or_init_impl</span>(<span class="ident">hasp_home</span>)
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load_or_init_at</span>(<span class="ident">hasp_dir</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Utf8PathBuf</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">hasp_dir</span> <span class="op">=</span> <span class="ident">hasp_dir</span>.<span class="ident">into</span>();
-        <span class="ident">fs::create_dir_all</span>(<span class="kw-2">&amp;</span><span class="ident">hasp_dir</span>)
-            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;creating hasp home at {} failed&quot;</span>, <span class="ident">hasp_dir</span>))<span class="question-mark">?</span>;
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load_or_init_at</span>(<span class="ident">home_dir</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">Utf8PathBuf</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">hasp_home</span> <span class="op">=</span> <span class="ident">HaspHome::new</span>(<span class="ident">home_dir</span>.<span class="ident">into</span>())<span class="question-mark">?</span>;
+        <span class="ident"><span class="self">Self</span>::load_or_init_impl</span>(<span class="ident">hasp_home</span>)
+    }
 
-        <span class="kw">let</span> <span class="ident">creator</span> <span class="op">=</span> <span class="ident">ConnectionCreator::new</span>(<span class="kw-2">&amp;</span><span class="ident">hasp_dir</span>);
+    <span class="kw">fn</span> <span class="ident">load_or_init_impl</span>(<span class="ident">home</span>: <span class="ident">HaspHome</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">creator</span> <span class="op">=</span> <span class="ident">ConnectionCreator::new</span>(<span class="kw-2">&amp;</span><span class="ident">home</span>.<span class="ident">home_dir</span>());
         <span class="kw">let</span> <span class="ident">event_logger</span> <span class="op">=</span> <span class="ident">EventLogger::new</span>(<span class="kw-2">&amp;</span><span class="ident">creator</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Run an initial create to initialize everything.</span>
         <span class="ident">creator</span>
             .<span class="ident">initialize</span>(<span class="kw-2">&amp;</span><span class="ident">event_logger</span>)
-            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;initializing database at {} failed&quot;</span>, <span class="ident">hasp_dir</span>))<span class="question-mark">?</span>;
+            .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;initializing database at {} failed&quot;</span>, <span class="ident">home</span>.<span class="ident">home_dir</span>()))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">home</span>: <span class="ident">hasp_dir</span>,
+            <span class="ident">home</span>,
             <span class="ident">ctx</span>: <span class="ident">DbContext</span> {
                 <span class="ident">creator</span>,
                 <span class="ident">event_logger</span>,
@@ -127,29 +131,39 @@
         })
     }
 
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">install_root</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">info</span>: <span class="ident">CrateInfo</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">InstallRoot</span><span class="op">&gt;</span> {
-        <span class="ident">InstallRoot::new</span>(<span class="ident">info</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">home</span>, <span class="self">self</span>.<span class="ident">ctx</span>.<span class="ident">clone</span>())
-    }
-}
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">cargo_install</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">name</span>: <span class="kw">impl</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+        <span class="ident">req</span>: <span class="ident">DirectoryVersionReq</span>,
+        <span class="ident">metadata</span>: <span class="ident">CargoDirectory</span>,
+        <span class="ident">output_opts</span>: <span class="ident">OutputOpts</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">InstallStatus</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">matcher</span> <span class="op">=</span> <span class="ident">CargoMatcher::new</span>(<span class="ident">metadata</span>);
+        <span class="kw">let</span> <span class="ident">matcher</span> <span class="op">=</span> <span class="ident">PackageMatcher::new</span>(
+            <span class="self">self</span>.<span class="ident">home</span>.<span class="ident">clone</span>(),
+            <span class="ident">Box::new</span>(<span class="ident">matcher</span>),
+            <span class="ident">name</span>.<span class="ident">into</span>(),
+            <span class="ident">req</span>,
+            <span class="ident">output_opts</span>,
+            <span class="self">self</span>.<span class="ident">ctx</span>.<span class="ident">clone</span>(),
+        );
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">hasp_home</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Utf8PathBuf</span><span class="op">&gt;</span> {
-    <span class="kw">match</span> <span class="ident">env::var_os</span>(<span class="string">&quot;HASP_HOME&quot;</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">hasp_home</span>) <span class="op">=</span><span class="op">&gt;</span> {
-            <span class="kw">let</span> <span class="ident">hasp_home</span>: <span class="ident">Utf8PathBuf</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="ident">hasp_home</span>)
-                .<span class="ident">try_into</span>()
-                .<span class="ident">wrap_err</span>(<span class="string">&quot;HASP_HOME env var is not valid UTF-8&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="ident">hasp_home</span>.<span class="ident">is_relative</span>() {
-                <span class="macro">bail!</span>(<span class="string">&quot;HASP_HOME {} must be absolute&quot;</span>, <span class="ident">hasp_home</span>);
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">conn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">ctx</span>.<span class="ident">creator</span>.<span class="ident">create</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">conn</span>.<span class="ident">transaction</span>()<span class="question-mark">?</span>;
+
+        <span class="kw">match</span> <span class="ident">matcher</span>.<span class="ident">best_installed_match</span>(<span class="kw-2">&amp;</span><span class="ident">txn</span>)<span class="question-mark">?</span> {
+            <span class="prelude-val">Some</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// TODO: force install/update?</span>
+                <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::AlreadyInstalled</span>)
             }
-            <span class="prelude-val">Ok</span>(<span class="ident">hasp_home</span>)
-        },
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">match</span> <span class="ident">home_dir</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">dir</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">dir</span>
-                .<span class="ident">join</span>(<span class="string">&quot;.hasp&quot;</span>)
-                .<span class="ident">try_into</span>()
-                .<span class="ident">wrap_err</span>(<span class="string">&quot;home dir is not valid UTF-8&quot;</span>),
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">bail!</span>(<span class="string">&quot;user home directory could not be determined (use HASP_HOME to set an explicit directory for hasp)&quot;</span>)
-        },
+            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="comment">// Perform the resolve/fetch/install operations.</span>
+                <span class="kw">let</span> <span class="ident">resolver</span> <span class="op">=</span> <span class="ident">matcher</span>.<span class="ident">make_resolver</span>();
+                <span class="kw">let</span> <span class="ident">fetcher</span> <span class="op">=</span> <span class="ident">resolver</span>.<span class="ident">make_fetcher</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">installer</span> <span class="op">=</span> <span class="ident">fetcher</span>.<span class="ident">fetch</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="ident">installer</span>.<span class="ident">install</span>(<span class="bool-val">false</span>).<span class="kw">await</span>
+            }
+        }
     }
 }
 </code></pre></div>

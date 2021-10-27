@@ -69,8 +69,6 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
@@ -122,9 +120,7 @@
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">output_opts</span>.<span class="ident">quiet</span> {
             <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="string">&quot;--quiet&quot;</span>);
         }
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">output_opts</span>.<span class="ident">verbose</span> {
-            <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="string">&quot;--verbose&quot;</span>);
-        }
+        <span class="comment">// Don&#39;t push verbose down because it produces a ton of output.</span>
         <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">output_opts</span>.<span class="ident">color</span>.<span class="ident">to_arg</span>());
 
         <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">command</span>);

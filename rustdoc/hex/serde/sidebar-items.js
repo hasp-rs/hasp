@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["deserialize","Deserializes a hex string into raw bytes."],["serialize","Serializes `data` as hex string using lowercase characters."],["serialize_upper","Serializes `data` as hex string using uppercase characters."]]});
