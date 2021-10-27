@@ -1,7 +1,7 @@
 // Copyright (c) The hasp Contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::fetch_install::{
+use crate::ops::{
     states::helpers::Utf8TempDir, PackageInstaller, PackageInstallerImpl, PackageMatcher,
 };
 use async_trait::async_trait;
