@@ -3,13 +3,12 @@
 
 use crate::{
     database::DbContext,
-    fetch_install::{PackageResolver, PackageResolverImpl},
+    home::HaspHome,
     models::directory::{DirectoryRow, InstalledRow},
+    ops::{PackageResolver, PackageResolverImpl},
     output::OutputOpts,
-    state::HaspHome,
 };
 use async_trait::async_trait;
-
 use color_eyre::{eyre::WrapErr, Result};
 use hasp_metadata::{DirectoryVersion, DirectoryVersionReq};
 use rusqlite::Connection;

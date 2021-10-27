@@ -1,9 +1,7 @@
 // Copyright (c) The hasp Contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::{
-    fetch_install::InstallStatus, helpers::split_version, output::OutputOpts, state::HaspState,
-};
+use crate::{helpers::split_version, ops::InstallStatus, output::OutputOpts, state::HaspState};
 use color_eyre::{owo_colors::OwoColorize, Result};
 use hasp_metadata::CargoDirectory;
 use structopt::StructOpt;
@@ -11,9 +9,10 @@ use structopt::StructOpt;
 mod cargo_cli;
 mod database;
 mod events;
-mod fetch_install;
 mod helpers;
+mod home;
 mod models;
+mod ops;
 mod output;
 mod state;
 

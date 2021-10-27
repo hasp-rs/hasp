@@ -5,11 +5,11 @@
 
 use crate::{
     cargo_cli::CargoCli,
-    fetch_install::{
+    models::directory::{DirectoryRow, InstalledRow},
+    ops::{
         PackageFetcherImpl, PackageInstallerImpl, PackageMatcherImpl, PackageResolverImpl,
         TempInstalledFile, TempInstalledPackage,
     },
-    models::directory::{DirectoryRow, InstalledRow},
     output::OutputOpts,
 };
 use async_trait::async_trait;

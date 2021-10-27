@@ -3,13 +3,13 @@
 
 use crate::{
     database::DbContext,
-    fetch_install::{
+    models::directory::DirectoryRow,
+    ops::{
         states::helpers::{
             hash_bytes, hash_file, rename_non_racy, ExclusiveRoot, UnlockedRoot, Utf8TempDir,
         },
         PackageMatcher,
     },
-    models::directory::DirectoryRow,
 };
 use async_trait::async_trait;
 use camino::{Utf8Path, Utf8PathBuf};
