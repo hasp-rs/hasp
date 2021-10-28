@@ -19,6 +19,7 @@ use color_eyre::{
     eyre::{bail, eyre, WrapErr},
     Result,
 };
+use colored::Colorize;
 use crates_index::{Index, IndexConfig};
 use flate2::read::GzDecoder;
 use hasp_metadata::{CargoDirectory, DirectoryVersion, DirectoryVersionReq};
@@ -166,6 +167,7 @@ impl PackageFetcherImpl for CargoFetcher {
             .download_url(&self.config)
             .ok_or_else(|| eyre!("failed to create download URL"))?;
         let download_path = fetch_dir.join(format!("{}-{}.crate", self.name, self.version));
+
         fetch_url(&url, &download_path)
             .await
             .wrap_err_with(|| format!("failed to download {} to {}", url, download_path))?;
@@ -181,6 +183,8 @@ impl PackageFetcherImpl for CargoFetcher {
 
         let extracted_dir = fetch_dir.join(format!("{}-{}", self.name, self.version));
         Ok(Box::new(CargoInstaller {
+            name: self.name.clone(),
+            version: self.version.clone(),
             extracted_dir,
             metadata: self.metadata.clone(),
             output_opts: self.output_opts,
@@ -190,6 +194,8 @@ impl PackageFetcherImpl for CargoFetcher {
 
 #[derive(Debug)]
 struct CargoInstaller {
+    name: String,
+    version: Version,
     extracted_dir: Utf8PathBuf,
     metadata: CargoDirectory,
     output_opts: OutputOpts,
@@ -216,12 +222,10 @@ impl PackageInstallerImpl for CargoInstaller {
             cargo_cli.add_arg("--no-default-features");
         }
 
-        log::debug!("starting cargo build in {}", self.extracted_dir);
-
-        for entry in self.extracted_dir.read_dir()? {
-            let entry = entry?;
-            println!("{}", entry.path().display());
-        }
+        tracing::debug!(
+            target: "hasp::output::working::building",
+            "Building with cargo in {}", self.extracted_dir,
+        );
 
         // Build the artifacts.
         let reader = cargo_cli
@@ -234,6 +238,7 @@ impl PackageInstallerImpl for CargoInstaller {
         let messages = Message::parse_stream(BufReader::new(reader));
 
         let mut installed_files = BTreeMap::new();
+
         for message in messages {
             let message = message.wrap_err("failed to parse Cargo message")?;
             if let Message::CompilerArtifact(artifact) = message {
@@ -250,6 +255,10 @@ impl PackageInstallerImpl for CargoInstaller {
                     );
                 }
             }
+        }
+
+        if installed_files.is_empty() {
+            bail!("crate does not have any binaries");
         }
 
         // Also attach the Cargo.lock file.
@@ -272,13 +281,21 @@ impl PackageInstallerImpl for CargoInstaller {
 }
 
 async fn fetch_url(url: &str, download_path: &Utf8Path) -> Result<()> {
-    log::debug!("downloading {} to {}", url, download_path);
+    tracing::debug!(
+        target: "hasp::output::working::downloading",
+        "Downloading {} to {}", url.bold(), download_path.as_str().bold(),
+    );
     let resp = reqwest::get(url).await?;
     let bytes = resp.bytes().await?;
 
-    log::trace!("writing {} bytes to {}", bytes.len(), download_path);
+    tracing::trace!(
+        target: "hasp::output::working::writing_bytes",
+        "Writing {} bytes to {}", bytes.len(), download_path);
     std::fs::write(download_path, &bytes)?;
-    log::debug!("download of {} to {} successful", url, download_path);
+    tracing::debug!(
+        target: "hasp::output::downloaded",
+        "Downloaded {} to {}", url, download_path,
+    );
 
     Ok(())
 }
@@ -287,6 +304,10 @@ async fn fetch_url(url: &str, download_path: &Utf8Path) -> Result<()> {
 fn fetch_crates_io(index: &mut Index) -> Result<()> {
     static FETCH_DONE: OnceCell<()> = OnceCell::new();
     FETCH_DONE.get_or_try_init(|| {
+        tracing::info!(
+            target: "hasp::output::working::updating_index",
+            "Updating crates.io index",
+        );
         index
             .update()
             .wrap_err("failed to retrieve crates.io index")

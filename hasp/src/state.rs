@@ -68,9 +68,11 @@ impl HaspState {
         let txn = conn.transaction()?;
 
         match matcher.best_installed_match(&txn)? {
-            Some(_) => {
+            Some(row) => {
                 // TODO: force install/update?
-                Ok(InstallStatus::AlreadyInstalled)
+                Ok(InstallStatus::AlreadyInstalled {
+                    version: row.directory_row.package.version,
+                })
             }
             None => {
                 // Perform the resolve/fetch/install operations.

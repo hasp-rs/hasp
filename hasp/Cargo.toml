@@ -9,19 +9,20 @@ async-trait = "0.1.51"
 blake3 = "1.1.0"
 camino = "1.0.5"
 cargo_metadata = "0.14.0"
+cfg-if = "1.0.0"
 chrono = "0.4.19"
-color-eyre = { version = "0.5.11", default-features = false }
+color-eyre = "0.5.11"
 colored = "2.0.0"
 crates-index = "0.18.0"
 duct = "0.13.5"
-env_logger = "0.9.0"
 flate2 = "1.0.22"
 fs2 = "0.4.3"
+futures = "0.3.17"
 hasp-metadata = { path = "../hasp-metadata", features = ["rusqlite"] }
 home = "0.5.3"
 include_dir = "0.6.2"
+indenter = "0.3.3"
 jod-thread = "0.1.2"
-log = "0.4.14"
 once_cell = "1.8.0"
 semver = { version = "1.0.4", features = ["serde"] }
 serde = { version = "1.0.130", features = ["derive"] }
@@ -32,6 +33,8 @@ structopt = "0.3.25"
 tar = "0.4.37"
 tempfile = "3.2.0"
 tokio = { version = "1.12.0", features = ["macros", "rt-multi-thread"] }
+tracing = "0.1.29"
+tracing-subscriber = { version = "0.3.1", features = ["env-filter", "registry", "parking_lot"] }
 twox-hash = "1.6.1"
 hasp-workspace-hack = { path = "../hasp-workspace-hack"}
 

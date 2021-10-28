@@ -50,14 +50,21 @@ impl<'a> CargoCli<'a> {
             initial_args.push("--quiet");
         }
         // Don't push verbose down because it produces a ton of output.
+        // TODO: push verbose 2 and above down?
+
         initial_args.push(self.output_opts.color.to_arg());
 
         initial_args.push(self.command);
 
-        duct::cmd(
-            self.cargo_path.as_std_path(),
-            initial_args.into_iter().chain(self.args.iter().copied()),
-        )
+        let args: Vec<_> = initial_args
+            .into_iter()
+            .chain(self.args.iter().copied())
+            .collect();
+        tracing::debug!(
+            target: "hasp::output::working::running_cargo",
+            "Running {} {}", self.cargo_path, args.join(" "),
+        );
+        duct::cmd(self.cargo_path.as_str(), args)
     }
 }
 

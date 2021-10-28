@@ -276,10 +276,12 @@ fn run_migrations(txn: &Transaction, event_logger: &EventLogger) -> Result<()> {
 
     // Perform all the migrations one by one.
     let mut migrations_performed = vec![];
+    if migrations_performed.is_empty() {}
+
     for (&name, sql) in migrations_to_perform {
         let data = MigrationData { name };
 
-        log::debug!("running migration {}", name);
+        tracing::debug!("running migration {}", name);
         event_logger.log("migration_started", &data);
         match run_one_migration(txn, name, sql) {
             Ok(()) => {

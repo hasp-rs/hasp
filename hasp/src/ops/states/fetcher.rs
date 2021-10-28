@@ -1,8 +1,9 @@
 // Copyright (c) The hasp Contributors
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use crate::ops::{
-    states::helpers::Utf8TempDir, PackageInstaller, PackageInstallerImpl, PackageMatcher,
+use crate::{
+    ops::{states::helpers::Utf8TempDir, PackageInstaller, PackageInstallerImpl, PackageMatcher},
+    output::NameVersionDisplay,
 };
 use async_trait::async_trait;
 use camino::Utf8Path;
@@ -38,12 +39,23 @@ impl PackageFetcher {
         fs::create_dir_all(&fetch_dir)
             .wrap_err_with(|| format!("failed to create directory at {}", fetch_dir))?;
 
+        tracing::info!(
+            target: "hasp::output::working::fetching",
+            "Fetching {}",
+            NameVersionDisplay::dir_version(self.matcher.name(), &self.version),
+        );
+
         let installer = self
             .fetcher
             .fetch(&fetch_dir)
             .await
             .wrap_err_with(|| format!("failed to fetch package for {}", self.to_friendly()))?;
         PackageInstaller::new(self.matcher, installer, self.version, temp_dir)
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn version(&self) -> &DirectoryVersion {
+        &self.version
     }
 
     pub(crate) fn to_friendly(&self) -> String {

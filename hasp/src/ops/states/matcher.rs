@@ -84,7 +84,7 @@ impl PackageMatcher {
             .best_match(all_matches)
             .wrap_err_with(|| {
                 format!(
-                    "failed to find best match for {}:{} (version {})",
+                    "failed to find best match for {}:{} v{}",
                     self.namespace(),
                     self.name(),
                     version

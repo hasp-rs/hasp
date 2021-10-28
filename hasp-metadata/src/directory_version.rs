@@ -51,6 +51,16 @@ impl DirectoryVersion {
             _ => None,
         }
     }
+
+    /// Returns an implementation of `Display` that prints out just the version number or string.
+    ///
+    /// This is not the default because `FromStr` and `Display` roundtrip.
+    pub fn short_display(&self) -> &dyn fmt::Display {
+        match self {
+            DirectoryVersion::Semantic(version) => version,
+            DirectoryVersion::Literal(version) => version,
+        }
+    }
 }
 
 impl fmt::Display for DirectoryVersion {

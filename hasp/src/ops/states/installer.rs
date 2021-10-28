@@ -10,11 +10,13 @@ use crate::{
         },
         PackageMatcher,
     },
+    output::NameVersionDisplay,
 };
 use async_trait::async_trait;
 use camino::{Utf8Path, Utf8PathBuf};
 use chrono::{DateTime, Local};
 use color_eyre::{eyre::WrapErr, Report, Result};
+use colored::Colorize;
 use hasp_metadata::{
     DirectoryHash, DirectoryVersion, FailureReason, InstallFailed, InstallStarted, InstallSuccess,
 };
@@ -26,6 +28,7 @@ use twox_hash::XxHash64;
 pub(crate) struct PackageInstaller {
     matcher: PackageMatcher,
     installer: Box<dyn PackageInstallerImpl>,
+    version: DirectoryVersion,
     temp_dir: Utf8TempDir,
     install_path: Utf8PathBuf,
     row: DirectoryRow,
@@ -83,6 +86,7 @@ impl PackageInstaller {
         Ok(Self {
             matcher,
             installer,
+            version,
             temp_dir,
             install_path,
             row,
@@ -97,14 +101,23 @@ impl PackageInstaller {
         // What is the current state of the package?
         if self.row.get_installed(&conn)? && !force {
             // The package is already installed.
-            Ok(InstallStatus::AlreadyInstalled)
+            Ok(InstallStatus::AlreadyInstalled {
+                version: self.version.clone(),
+            })
         } else {
             // Start the installation. (The locking means that nothing else would have come
             // along to start the installation.)
             let guard = lock.start_install(true)?;
+
             match self.install_and_finish(guard).await {
-                Ok(()) => Ok(InstallStatus::Success),
-                Err(InstallError::Fail(err)) => Ok(InstallStatus::Failure(err)),
+                Ok(binaries) => Ok(InstallStatus::Success {
+                    version: self.version.clone(),
+                    binaries,
+                }),
+                Err(InstallError::Fail(err)) => Ok(InstallStatus::Failure {
+                    version: self.version.clone(),
+                    report: err,
+                }),
                 Err(InstallError::Abort(err)) => Err(err),
             }
         }
@@ -120,7 +133,10 @@ impl PackageInstaller {
     }
 
     #[inline]
-    async fn install_and_finish(&self, mut guard: InstallGuard<'_>) -> Result<(), InstallError> {
+    async fn install_and_finish(
+        &self,
+        mut guard: InstallGuard<'_>,
+    ) -> Result<Vec<String>, InstallError> {
         let temp_package = guard.install().await.map_err(|err| {
             err.log_and_rollback(&mut guard);
             err
@@ -143,9 +159,17 @@ impl AsRef<Utf8Path> for PackageInstaller {
 #[derive(Debug)]
 #[must_use]
 pub(crate) enum InstallStatus {
-    Success,
-    Failure(Report),
-    AlreadyInstalled,
+    Success {
+        version: DirectoryVersion,
+        binaries: Vec<String>,
+    },
+    Failure {
+        version: DirectoryVersion,
+        report: Report,
+    },
+    AlreadyInstalled {
+        version: DirectoryVersion,
+    },
 }
 
 #[derive(Debug)]
@@ -294,6 +318,12 @@ impl<'inst> InstallGuard<'inst> {
 
     /// Installs the package into the temp directory.
     async fn install(&self) -> Result<TempInstalledPackage, InstallError> {
+        tracing::info!(
+            target: "hasp::output::working::installing",
+            "Installing {}",
+            NameVersionDisplay::dir_version(self.lock.ctx.matcher.name(), &self.lock.ctx.version),
+        );
+
         let mut temp_package = self
             .lock
             .ctx
@@ -320,10 +350,8 @@ impl<'inst> InstallGuard<'inst> {
     }
 
     /// Commits the install transaction and mark it finished.
-    fn finish(&mut self, temp_package: TempInstalledPackage) -> Result<()> {
-        if self.finished {
-            return Ok(());
-        }
+    fn finish(&mut self, temp_package: TempInstalledPackage) -> Result<Vec<String>> {
+        assert!(!self.finished, "finish should never be called twice");
 
         let mut conn = self.lock.db_ctx().creator.create()?;
         let txn = conn.transaction()?;
@@ -403,12 +431,19 @@ impl<'inst> InstallGuard<'inst> {
             start_time: self.start_time,
             end_time: Local::now(),
         };
+
         self.lock
             .db_ctx()
             .event_logger
             .log("install_success", &install_success);
 
-        Ok(())
+        let installed_binaries: Vec<_> = temp_package
+            .installed_files
+            .iter()
+            .filter_map(|(name, file)| file.is_binary.then(|| format!("{}", name.as_str().bold())))
+            .collect();
+
+        Ok(installed_binaries)
     }
 
     /// Explicitly roll back the installation.
