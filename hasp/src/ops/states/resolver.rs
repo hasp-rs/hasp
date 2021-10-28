@@ -7,6 +7,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use color_eyre::{eyre::WrapErr, Result};
+use colored::Colorize;
 use hasp_metadata::DirectoryVersionReq;
 use std::fmt;
 
@@ -38,6 +39,14 @@ impl PackageResolver {
                     self.matcher.to_friendly()
                 )
             })?;
+
+        tracing::debug!(
+            target: "hasp::output::resolved_version",
+            "Resolved {} @ {} to version {}",
+            self.matcher.name().blue(),
+            self.matcher.req(),
+            fetcher.version().short_display(),
+        );
 
         Ok(PackageFetcher::new(self.matcher, fetcher))
     }

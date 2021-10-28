@@ -4,6 +4,7 @@
 use crate::database::ConnectionCreator;
 use chrono::Local;
 use color_eyre::{eyre::WrapErr, Result};
+use colored::Colorize;
 use jod_thread::JoinHandle;
 use rusqlite::params;
 use serde::Serialize;
@@ -25,7 +26,7 @@ impl EventLogger {
             .name("hasp-event-logger".to_owned())
             .spawn(move || {
                 loop {
-                    let (event_name, data) = match receiver.recv() {
+                    let (event_name, data): (&str, String) = match receiver.recv() {
                         Ok(event) => event,
                         Err(_) => {
                             // All senders were dropped -- shut this thread down.
@@ -34,11 +35,14 @@ impl EventLogger {
                     };
                     // TODO: begin concurrent if/when that's available?
                     // TODO: error handling for this? ignore errors for now.
-                    log::debug!("recording event {}", event_name);
+                    tracing::debug!(
+                        target: "hasp::output::recording::recording_event",
+                        "Recording event {}", event_name.bold(),
+                    );
                     events_conn.execute(
                     "INSERT INTO journal (event_name, event_time, data) VALUES (?1, ?2, ?3)",
                     params![event_name, Local::now(), data],
-                    ).expect("wat");
+                    ).expect("input is always valid");
                 }
             })
             .wrap_err("creating event logger thread failed")?;
