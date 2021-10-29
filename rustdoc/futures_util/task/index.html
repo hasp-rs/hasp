@@ -16,8 +16,10 @@ executors or dealing with synchronization issues around task wakeup.</p>
 </div><div class="item-left module-item"><a class="struct" href="struct.LocalFutureObj.html" title="futures_util::task::LocalFutureObj struct">LocalFutureObj</a></div><div class="item-right docblock-short"><p>A custom trait object for polling futures, roughly akin to
 <code>Box&lt;dyn Future&lt;Output = T&gt; + 'a&gt;</code>.</p>
 </div><div class="item-left module-item"><a class="struct" href="struct.SpawnError.html" title="futures_util::task::SpawnError struct">SpawnError</a></div><div class="item-right docblock-short"><p>An error that occurred during spawning.</p>
+</div><div class="item-left module-item"><a class="struct" href="struct.WakerRef.html" title="futures_util::task::WakerRef struct">WakerRef</a></div><div class="item-right docblock-short"><p>A <a href="https://doc.rust-lang.org/1.56.0/core/task/wake/struct.Waker.html" title="Waker"><code>Waker</code></a> that is only valid for a given lifetime.</p>
 </div></div><h2 id="traits" class="section-header"><a href="#traits">Traits</a></h2>
-<div class="item-table"><div class="item-left module-item"><a class="trait" href="trait.LocalSpawn.html" title="futures_util::task::LocalSpawn trait">LocalSpawn</a></div><div class="item-right docblock-short"><p>The <code>LocalSpawn</code> is similar to <a href="trait.Spawn.html" title="Spawn"><code>Spawn</code></a>, but allows spawning futures
+<div class="item-table"><div class="item-left module-item"><a class="trait" href="trait.ArcWake.html" title="futures_util::task::ArcWake trait">ArcWake</a></div><div class="item-right docblock-short"><p>A way of waking up a specific task.</p>
+</div><div class="item-left module-item"><a class="trait" href="trait.LocalSpawn.html" title="futures_util::task::LocalSpawn trait">LocalSpawn</a></div><div class="item-right docblock-short"><p>The <code>LocalSpawn</code> is similar to <a href="trait.Spawn.html" title="Spawn"><code>Spawn</code></a>, but allows spawning futures
 that don’t implement <code>Send</code>.</p>
 </div><div class="item-left module-item"><a class="trait" href="trait.LocalSpawnExt.html" title="futures_util::task::LocalSpawnExt trait">LocalSpawnExt</a></div><div class="item-right docblock-short"><p>Extension trait for <code>LocalSpawn</code>.</p>
 </div><div class="item-left module-item"><a class="trait" href="trait.Spawn.html" title="futures_util::task::Spawn trait">Spawn</a></div><div class="item-right docblock-short"><p>The <code>Spawn</code> trait allows for pushing futures onto an executor that will
@@ -28,6 +30,10 @@ a vtable with drop support.</p>
 </div></div><h2 id="functions" class="section-header"><a href="#functions">Functions</a></h2>
 <div class="item-table"><div class="item-left module-item"><a class="fn" href="fn.noop_waker.html" title="futures_util::task::noop_waker fn">noop_waker</a></div><div class="item-right docblock-short"><p>Create a new <a href="https://doc.rust-lang.org/1.56.0/core/task/wake/struct.Waker.html" title="Waker"><code>Waker</code></a> which does
 nothing when <code>wake()</code> is called on it.</p>
+</div><div class="item-left module-item"><a class="fn" href="fn.noop_waker_ref.html" title="futures_util::task::noop_waker_ref fn">noop_waker_ref</a></div><div class="item-right docblock-short"><p>Get a static reference to a <a href="https://doc.rust-lang.org/1.56.0/core/task/wake/struct.Waker.html" title="Waker"><code>Waker</code></a> which
+does nothing when <code>wake()</code> is called on it.</p>
+</div><div class="item-left module-item"><a class="fn" href="fn.waker.html" title="futures_util::task::waker fn">waker</a></div><div class="item-right docblock-short"><p>Creates a <a href="https://doc.rust-lang.org/1.56.0/core/task/wake/struct.Waker.html" title="Waker"><code>Waker</code></a> from an <code>Arc&lt;impl ArcWake&gt;</code>.</p>
+</div><div class="item-left module-item"><a class="fn" href="fn.waker_ref.html" title="futures_util::task::waker_ref fn">waker_ref</a></div><div class="item-right docblock-short"><p>Creates a reference to a <a href="https://doc.rust-lang.org/1.56.0/core/task/wake/struct.Waker.html" title="Waker"><code>Waker</code></a> from a reference to <code>Arc&lt;impl ArcWake&gt;</code>.</p>
 </div></div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="futures_util" data-search-index-js="../../search-index.js" data-search-js="../../search.js"></div>
     <script src="../../main.js"></script>
 </body></html>

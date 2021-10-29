@@ -512,6 +512,41 @@
 <span id="512">512</span>
 <span id="513">513</span>
 <span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
+<span id="521">521</span>
+<span id="522">522</span>
+<span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
@@ -524,11 +559,13 @@
         },
         <span class="ident">PackageMatcher</span>,
     },
+    <span class="ident">output::NameVersionDisplay</span>,
 };
 <span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
 <span class="kw">use</span> <span class="ident">camino</span>::{<span class="ident">Utf8Path</span>, <span class="ident">Utf8PathBuf</span>};
 <span class="kw">use</span> <span class="ident">chrono</span>::{<span class="ident">DateTime</span>, <span class="ident">Local</span>};
 <span class="kw">use</span> <span class="ident">color_eyre</span>::{<span class="ident">eyre::WrapErr</span>, <span class="ident">Report</span>, <span class="prelude-ty">Result</span>};
+<span class="kw">use</span> <span class="ident">colored::Colorize</span>;
 <span class="kw">use</span> <span class="ident">hasp_metadata</span>::{
     <span class="ident">DirectoryHash</span>, <span class="ident">DirectoryVersion</span>, <span class="ident">FailureReason</span>, <span class="ident">InstallFailed</span>, <span class="ident">InstallStarted</span>, <span class="ident">InstallSuccess</span>,
 };
@@ -540,6 +577,7 @@
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct</span> <span class="ident">PackageInstaller</span> {
     <span class="ident">matcher</span>: <span class="ident">PackageMatcher</span>,
     <span class="ident">installer</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">PackageInstallerImpl</span><span class="op">&gt;</span>,
+    <span class="ident">version</span>: <span class="ident">DirectoryVersion</span>,
     <span class="ident">temp_dir</span>: <span class="ident">Utf8TempDir</span>,
     <span class="ident">install_path</span>: <span class="ident">Utf8PathBuf</span>,
     <span class="ident">row</span>: <span class="ident">DirectoryRow</span>,
@@ -597,6 +635,7 @@
         <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
             <span class="ident">matcher</span>,
             <span class="ident">installer</span>,
+            <span class="ident">version</span>,
             <span class="ident">temp_dir</span>,
             <span class="ident">install_path</span>,
             <span class="ident">row</span>,
@@ -611,14 +650,23 @@
         <span class="comment">// What is the current state of the package?</span>
         <span class="kw">if</span> <span class="self">self</span>.<span class="ident">row</span>.<span class="ident">get_installed</span>(<span class="kw-2">&amp;</span><span class="ident">conn</span>)<span class="question-mark">?</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">force</span> {
             <span class="comment">// The package is already installed.</span>
-            <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::AlreadyInstalled</span>)
+            <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::AlreadyInstalled</span> {
+                <span class="ident">version</span>: <span class="self">self</span>.<span class="ident">version</span>.<span class="ident">clone</span>(),
+            })
         } <span class="kw">else</span> {
             <span class="comment">// Start the installation. (The locking means that nothing else would have come</span>
             <span class="comment">// along to start the installation.)</span>
             <span class="kw">let</span> <span class="ident">guard</span> <span class="op">=</span> <span class="ident">lock</span>.<span class="ident">start_install</span>(<span class="bool-val">true</span>)<span class="question-mark">?</span>;
+
             <span class="kw">match</span> <span class="self">self</span>.<span class="ident">install_and_finish</span>(<span class="ident">guard</span>).<span class="kw">await</span> {
-                <span class="prelude-val">Ok</span>(()) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::Success</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">InstallError::Fail</span>(<span class="ident">err</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::Failure</span>(<span class="ident">err</span>)),
+                <span class="prelude-val">Ok</span>(<span class="ident">binaries</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::Success</span> {
+                    <span class="ident">version</span>: <span class="self">self</span>.<span class="ident">version</span>.<span class="ident">clone</span>(),
+                    <span class="ident">binaries</span>,
+                }),
+                <span class="prelude-val">Err</span>(<span class="ident">InstallError::Fail</span>(<span class="ident">err</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">InstallStatus::Failure</span> {
+                    <span class="ident">version</span>: <span class="self">self</span>.<span class="ident">version</span>.<span class="ident">clone</span>(),
+                    <span class="ident">report</span>: <span class="ident">err</span>,
+                }),
                 <span class="prelude-val">Err</span>(<span class="ident">InstallError::Abort</span>(<span class="ident">err</span>)) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
             }
         }
@@ -634,7 +682,10 @@
     }
 
     <span class="attribute">#[<span class="ident">inline</span>]</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">install_and_finish</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">guard</span>: <span class="ident">InstallGuard</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">InstallError</span><span class="op">&gt;</span> {
+    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">install_and_finish</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="kw-2">mut</span> <span class="ident">guard</span>: <span class="ident">InstallGuard</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">InstallError</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">temp_package</span> <span class="op">=</span> <span class="ident">guard</span>.<span class="ident">install</span>().<span class="kw">await</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> {
             <span class="ident">err</span>.<span class="ident">log_and_rollback</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">guard</span>);
             <span class="ident">err</span>
@@ -657,9 +708,17 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
 <span class="attribute">#[<span class="ident">must_use</span>]</span>
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">enum</span> <span class="ident">InstallStatus</span> {
-    <span class="ident">Success</span>,
-    <span class="ident">Failure</span>(<span class="ident">Report</span>),
-    <span class="ident">AlreadyInstalled</span>,
+    <span class="ident">Success</span> {
+        <span class="ident">version</span>: <span class="ident">DirectoryVersion</span>,
+        <span class="ident">binaries</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    },
+    <span class="ident">Failure</span> {
+        <span class="ident">version</span>: <span class="ident">DirectoryVersion</span>,
+        <span class="ident">report</span>: <span class="ident">Report</span>,
+    },
+    <span class="ident">AlreadyInstalled</span> {
+        <span class="ident">version</span>: <span class="ident">DirectoryVersion</span>,
+    },
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
@@ -808,6 +867,12 @@
 
     <span class="doccomment">/// Installs the package into the temp directory.</span>
     <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">install</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">TempInstalledPackage</span>, <span class="ident">InstallError</span><span class="op">&gt;</span> {
+        <span class="macro">tracing::info!</span>(
+            <span class="ident">target</span>: <span class="string">&quot;hasp::output::working::installing&quot;</span>,
+            <span class="string">&quot;Installing {}&quot;</span>,
+            <span class="ident">NameVersionDisplay::dir_version</span>(<span class="self">self</span>.<span class="ident">lock</span>.<span class="ident">ctx</span>.<span class="ident">matcher</span>.<span class="ident">name</span>(), <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">lock</span>.<span class="ident">ctx</span>.<span class="ident">version</span>),
+        );
+
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">temp_package</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">lock</span>
             .<span class="ident">ctx</span>
@@ -834,10 +899,8 @@
     }
 
     <span class="doccomment">/// Commits the install transaction and mark it finished.</span>
-    <span class="kw">fn</span> <span class="ident">finish</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">temp_package</span>: <span class="ident">TempInstalledPackage</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">finished</span> {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-        }
+    <span class="kw">fn</span> <span class="ident">finish</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">temp_package</span>: <span class="ident">TempInstalledPackage</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="macro">assert!</span>(<span class="op">!</span><span class="self">self</span>.<span class="ident">finished</span>, <span class="string">&quot;finish should never be called twice&quot;</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">conn</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">lock</span>.<span class="ident">db_ctx</span>().<span class="ident">creator</span>.<span class="ident">create</span>()<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">txn</span> <span class="op">=</span> <span class="ident">conn</span>.<span class="ident">transaction</span>()<span class="question-mark">?</span>;
@@ -917,12 +980,19 @@
             <span class="ident">start_time</span>: <span class="self">self</span>.<span class="ident">start_time</span>,
             <span class="ident">end_time</span>: <span class="ident">Local::now</span>(),
         };
+
         <span class="self">self</span>.<span class="ident">lock</span>
             .<span class="ident">db_ctx</span>()
             .<span class="ident">event_logger</span>
             .<span class="ident">log</span>(<span class="string">&quot;install_success&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">install_success</span>);
 
-        <span class="prelude-val">Ok</span>(())
+        <span class="kw">let</span> <span class="ident">installed_binaries</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">temp_package</span>
+            .<span class="ident">installed_files</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">filter_map</span>(<span class="op">|</span>(<span class="ident">name</span>, <span class="ident">file</span>)<span class="op">|</span> <span class="ident">file</span>.<span class="ident">is_binary</span>.<span class="ident">then</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">name</span>.<span class="ident">as_str</span>().<span class="ident">bold</span>())))
+            .<span class="ident">collect</span>();
+
+        <span class="prelude-val">Ok</span>(<span class="ident">installed_binaries</span>)
     }
 
     <span class="doccomment">/// Explicitly roll back the installation.</span>

@@ -69,6 +69,13 @@
 <span id="69">69</span>
 <span id="70">70</span>
 <span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
@@ -121,14 +128,21 @@
             <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="string">&quot;--quiet&quot;</span>);
         }
         <span class="comment">// Don&#39;t push verbose down because it produces a ton of output.</span>
+        <span class="comment">// TODO: push verbose 2 and above down?</span>
+
         <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">output_opts</span>.<span class="ident">color</span>.<span class="ident">to_arg</span>());
 
         <span class="ident">initial_args</span>.<span class="ident">push</span>(<span class="self">self</span>.<span class="ident">command</span>);
 
-        <span class="ident">duct::cmd</span>(
-            <span class="self">self</span>.<span class="ident">cargo_path</span>.<span class="ident">as_std_path</span>(),
-            <span class="ident">initial_args</span>.<span class="ident">into_iter</span>().<span class="ident">chain</span>(<span class="self">self</span>.<span class="ident">args</span>.<span class="ident">iter</span>().<span class="ident">copied</span>()),
-        )
+        <span class="kw">let</span> <span class="ident">args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">initial_args</span>
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">chain</span>(<span class="self">self</span>.<span class="ident">args</span>.<span class="ident">iter</span>().<span class="ident">copied</span>())
+            .<span class="ident">collect</span>();
+        <span class="macro">tracing::debug!</span>(
+            <span class="ident">target</span>: <span class="string">&quot;hasp::output::working::running_cargo&quot;</span>,
+            <span class="string">&quot;Running {} {}&quot;</span>, <span class="self">self</span>.<span class="ident">cargo_path</span>, <span class="ident">args</span>.<span class="ident">join</span>(<span class="string">&quot; &quot;</span>),
+        );
+        <span class="ident">duct::cmd</span>(<span class="self">self</span>.<span class="ident">cargo_path</span>.<span class="ident">as_str</span>(), <span class="ident">args</span>)
     }
 }
 

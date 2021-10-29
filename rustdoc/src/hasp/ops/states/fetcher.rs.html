@@ -65,11 +65,24 @@
 <span id="65">65</span>
 <span id="66">66</span>
 <span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><pre class="rust"><code><span class="comment">// Copyright (c) The hasp Contributors</span>
 <span class="comment">// SPDX-License-Identifier: MIT OR Apache-2.0</span>
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::ops</span>::{
-    <span class="ident">states::helpers::Utf8TempDir</span>, <span class="ident">PackageInstaller</span>, <span class="ident">PackageInstallerImpl</span>, <span class="ident">PackageMatcher</span>,
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">ops</span>::{<span class="ident">states::helpers::Utf8TempDir</span>, <span class="ident">PackageInstaller</span>, <span class="ident">PackageInstallerImpl</span>, <span class="ident">PackageMatcher</span>},
+    <span class="ident">output::NameVersionDisplay</span>,
 };
 <span class="kw">use</span> <span class="ident">async_trait::async_trait</span>;
 <span class="kw">use</span> <span class="ident">camino::Utf8Path</span>;
@@ -105,12 +118,23 @@
         <span class="ident">fs::create_dir_all</span>(<span class="kw-2">&amp;</span><span class="ident">fetch_dir</span>)
             .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to create directory at {}&quot;</span>, <span class="ident">fetch_dir</span>))<span class="question-mark">?</span>;
 
+        <span class="macro">tracing::info!</span>(
+            <span class="ident">target</span>: <span class="string">&quot;hasp::output::working::fetching&quot;</span>,
+            <span class="string">&quot;Fetching {}&quot;</span>,
+            <span class="ident">NameVersionDisplay::dir_version</span>(<span class="self">self</span>.<span class="ident">matcher</span>.<span class="ident">name</span>(), <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">version</span>),
+        );
+
         <span class="kw">let</span> <span class="ident">installer</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">fetcher</span>
             .<span class="ident">fetch</span>(<span class="kw-2">&amp;</span><span class="ident">fetch_dir</span>)
             .<span class="kw">await</span>
             .<span class="ident">wrap_err_with</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;failed to fetch package for {}&quot;</span>, <span class="self">self</span>.<span class="ident">to_friendly</span>()))<span class="question-mark">?</span>;
         <span class="ident">PackageInstaller::new</span>(<span class="self">self</span>.<span class="ident">matcher</span>, <span class="ident">installer</span>, <span class="self">self</span>.<span class="ident">version</span>, <span class="ident">temp_dir</span>)
+    }
+
+    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
+    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">version</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="ident">DirectoryVersion</span> {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">version</span>
     }
 
     <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">to_friendly</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">String</span> {
